@@ -2,9 +2,11 @@
 
 namespace App\Repositories\Cms\Home;
 
-use App\DTOs\Cms\Home\HomeDTO;
-use App\Models\CMS\Home\Home;
-use App\Repositories\Cms\Home\HomeRepositoryInterface;
+use App\{
+    DTOs\Cms\Home\HomeDTO,
+    Models\CMS\Home\Home,
+    Repositories\Cms\Home\HomeRepositoryInterface,
+};
 
 class HomeRepository implements HomeRepositoryInterface
 {

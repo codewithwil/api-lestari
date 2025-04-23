@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\API\CMS\Client;
 
-use App\DTOs\Cms\Client\ClientDto;
-use App\Http\Controllers\Controller;
-use App\Repositories\Cms\Client\ClientRepositoryInterface;
+use App\{
+    DTOs\Cms\Client\ClientDto,
+    Http\Controllers\Controller,
+    Repositories\Cms\Client\ClientRepositoryInterface,
+};
+
 use Illuminate\Http\Request;
 
 class ClientC extends Controller

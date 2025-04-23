@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\API\CMS\Home;
 
-use App\DTOs\Cms\Home\HomeDTO;
-use App\Http\Controllers\Controller;
-use App\Repositories\Cms\Home\HomeRepositoryInterface;
+use App\{
+    DTOs\Cms\Home\HomeDTO,
+    Http\Controllers\Controller,
+    Repositories\Cms\Home\HomeRepositoryInterface,
+};
+
 use Illuminate\Http\Request;
 
 class HomeC extends Controller

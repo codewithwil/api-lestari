@@ -2,8 +2,10 @@
 
 namespace App\Repositories\Cms\Client;
 
-use App\DTOs\Cms\Client\ClientDto;
-use App\Models\CMS\Client\Client;
+use App\{
+    DTOs\Cms\Client\ClientDto,
+    Models\CMS\Client\Client,
+};
 
 class ClientRepository implements ClientRepositoryInterface
 {

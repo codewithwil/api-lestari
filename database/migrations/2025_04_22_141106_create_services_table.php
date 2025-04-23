@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('homes', function (Blueprint $table) {
-            $table->string('homeId', 15)->primary();
-            $table->string('image', 200);
+        Schema::create('services', function (Blueprint $table) {
+            $table->string('serviceId', 15)->primary();
             $table->string('header', 75);
-            $table->text('description');
+            $table->text('desc');
             $table->timestamps();
-            
         });
     }
 
@@ -25,7 +23,7 @@ return new class extends Migration
      * Reverse the migrations.
      */
     public function down(): void
-    {   
-        Schema::dropIfExists('homes');
+    {
+        Schema::dropIfExists('services');
     }
 };

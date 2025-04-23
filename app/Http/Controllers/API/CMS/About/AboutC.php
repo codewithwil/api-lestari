@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\API\CMS\About;
 
-use App\DTOs\Cms\About\AboutDTO;
-use App\Http\Controllers\Controller;
-use App\Repositories\Cms\About\AboutRepositoryInterface;
+use App\{
+    DTOs\Cms\About\AboutDTO,
+    Http\Controllers\Controller,
+    Repositories\Cms\About\AboutRepositoryInterface,
+};
+
 use Illuminate\Http\Request;
 
 class AboutC extends Controller

@@ -2,9 +2,11 @@
 
 namespace App\Repositories\Cms\About;
 
-use App\DTOs\Cms\About\AboutDTO;
-use App\Models\CMS\About\About;
-use App\Repositories\Cms\About\AboutRepositoryInterface;
+use App\{
+    DTOs\Cms\About\AboutDTO,
+    Models\CMS\About\About,
+    Repositories\Cms\About\AboutRepositoryInterface,
+};
 
 class AboutRepository implements AboutRepositoryInterface
 {

@@ -1,10 +1,12 @@
 <?php
 namespace App\Http\Controllers\API\Auth;
 
-use App\Http\Controllers\Controller;
+use App\{
+    Http\Controllers\Controller,
+    DTOs\Auth\LoginDTO,
+    Repositories\Auth\AuthRepositoryInterface,
+};
 use Illuminate\Http\Request;
-use App\DTOs\Auth\LoginDTO;
-use App\Repositories\Auth\AuthRepositoryInterface;
 
 class AuthC extends Controller
 {
