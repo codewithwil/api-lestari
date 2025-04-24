@@ -18,6 +18,8 @@ use App\{
 };
 use App\Repositories\Cms\CountUp\CountUpRepository;
 use App\Repositories\Cms\CountUp\CountUpRepositoryInterface;
+use App\Repositories\Cms\Testimonial\TestimonialRepository;
+use App\Repositories\Cms\Testimonial\TestimonialRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -34,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ServiceRepositoryInterface::class, ServiceRepository::class);
         $this->app->bind(ServiceRepositoryInterface::class, ServiceRepository::class);
         $this->app->bind(CountUpRepositoryInterface::class, CountUpRepository::class);
+        $this->app->bind(TestimonialRepositoryInterface::class, TestimonialRepository::class);
     }
 
     /**

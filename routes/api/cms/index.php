@@ -7,3 +7,4 @@ Route::group(["prefix" => "/about", "as"   => "about."], __DIR__ . "/assets/abou
 Route::group(["prefix" => "/client", "as"  => "client."], __DIR__ . "/assets/client.php");
 Route::group(["prefix" => "/service", "as"  => "service."], __DIR__ . "/assets/service.php");
 Route::group(["prefix" => "/countUp", "as"  => "countUp."], __DIR__ . "/assets/countUp.php");
+Route::group(["prefix" => "/testimonial", "as"  => "testimonial."], __DIR__ . "/assets/testimonial.php");
