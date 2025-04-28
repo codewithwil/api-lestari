@@ -12,7 +12,7 @@ class HomeButtons extends Model
     protected $table = 'home_buttons';
     protected $primaryKey = 'homeButtonId';
     protected $fillable = [
-        'home_id', 'text', 'link'
+        'home_id', 'text', 'link', 'background', 'color', 'icon'
     ];
 
     public function home()

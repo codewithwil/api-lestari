@@ -14,8 +14,11 @@ return new class extends Migration
         Schema::create('home_buttons', function (Blueprint $table) {
             $table->string('homeButtonId')->primary();
             $table->string('home_id', 15);
+            $table->string('icon', 200)->nullable(true);
             $table->string('text', 75);
             $table->string('link', 75);
+            $table->string('background', 20);
+            $table->string('color', 20);
             $table->timestamps();
 
             $table->foreign('home_id')

@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('header', 75);
             $table->text('description');
             $table->timestamps();
-            
         });
     }
 
