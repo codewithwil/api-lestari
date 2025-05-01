@@ -12,4 +12,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(["prefix" => "/cms", "as" => "cms."], __DIR__ . "/api/cms/index.php");
 });
 
-Route::group(["prefix" => "/guest", "as" => "guest."], __DIR__ . "/api/guest/index.php");
+Route::group(["prefix" => "/guest", "as" => "guest."], __DIR__ . "/api/guest/index.php"); 

@@ -12,9 +12,14 @@ class HomeRepository implements HomeRepositoryInterface
 {
     public function getAll()
     {
-        return Home::with('buttons')->get();
+        return Home::select('homeId', 'image', 'header', 'description')
+            ->with(['buttons' => function ($query) {
+                $query->select('homeButtonId', 'home_id', 'text', 'link', 'background', 'color', 'icon');
+            }])
+            ->orderBy('created_at', 'asc') 
+            ->get();
     }
-
+    
     public function find(string $homeId)
     {
         return Home::with('buttons')->findOrFail($homeId);
@@ -55,6 +60,7 @@ class HomeRepository implements HomeRepositoryInterface
     public function delete(string $homeId)
     {
         $home = Home::findOrFail($homeId);
+        $home->buttons()->delete();
         $home->delete();
     }
 }
