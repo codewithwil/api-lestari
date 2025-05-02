@@ -8,5 +8,6 @@ class AboutDTO
         public readonly ?string $image,
         public readonly ?string $header,
         public readonly ?string $desc,
+        public readonly array $abouts 
     ) {}
 }

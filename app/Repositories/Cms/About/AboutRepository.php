@@ -12,12 +12,17 @@ class AboutRepository implements AboutRepositoryInterface
 {
     public function getAll()
     {
-        return About::get();
+        return About::select('aboutId', 'image', 'header', 'desc')
+        ->with(['aboutContent' => function ($query) {
+            $query->select('aboutConId', 'about_id', 'title', 'desc');
+        }])
+        ->orderBy('created_at', 'asc') 
+        ->get();
     }
 
     public function find(string $aboutId)
     {
-        return About::findOrFail($aboutId);
+        return About::with('aboutContent')->findOrFail($aboutId);
     }
 
     public function create(AboutDTO $data)
@@ -27,9 +32,11 @@ class AboutRepository implements AboutRepositoryInterface
             'header' => $data->header,
             'desc'  => $data->desc,
         ]);
+        foreach ($data->abouts as $aboutContent) {
+            $about->aboutcontent()->create($aboutContent);
+        }
 
-
-        return $about;
+        return $about->load('aboutcontent');
     }
 
     public function update(string $aboutId, AboutDTO $data)
@@ -41,12 +48,18 @@ class AboutRepository implements AboutRepositoryInterface
             'desc'  => $data->desc,
         ]);
 
-        return $about;
+        $about->aboutcontent()->delete(); 
+        foreach ($data->abouts as $aboutContent) {
+            $about->aboutcontent()->create($aboutContent);
+        }
+
+        return $about->load('aboutContent');
     }
 
     public function delete(string $aboutId)
     {
         $about = About::findOrFail($aboutId);
+        $about->aboutcontent()->delete();
         $about->delete();
     }
 }

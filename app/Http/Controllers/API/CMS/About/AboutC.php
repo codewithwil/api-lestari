@@ -6,12 +6,16 @@ use App\{
     DTOs\Cms\About\AboutDTO,
     Http\Controllers\Controller,
     Repositories\Cms\About\AboutRepositoryInterface,
+    Traits\Base64FileHandler,
+    Traits\dbTransac,
 };
 
 use Illuminate\Http\Request;
 
 class AboutC extends Controller
 {
+    use dbTransac, Base64FileHandler;
+
     public function __construct(
         protected AboutRepositoryInterface $about
     ) {}
@@ -21,63 +25,74 @@ class AboutC extends Controller
         return response()->json($this->about->getAll());
     }
 
-    public function show($homeId)
+    public function show($aboutId)
     {
-        return response()->json($this->about->find($homeId));
-    }
+        $about = $this->about->find($aboutId);
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'desc'   => 'nullable|string',
-            'header'        => 'nullable|string',
-            'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
-
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('about_images', 'public');
+        if ($about->image) {
+            $about->image = $this->convertToBase64(storage_path("app/public/{$about->image}"));
         }
 
-        $dto = new AboutDTO(
-            image:  $imagePath,
-            header: $validated['header'] ?? null,
-            desc:   $validated['desc'] ?? null,
-        );
-
-        return response()->json($this->about->create($dto));
+        return response()->json($about);
     }
 
-    public function update(Request $request, $homeId)
+    public function store(Request $req)
     {
-        $validated = $request->validate([
-            'desc'          => 'nullable|string',
-            'header'        => 'nullable|string',
-            'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'buttons'       => 'array',
-            'buttons.*.text'=> 'required|string',
-            'buttons.*.link'=> 'required|string|url',
-        ]);
+        return $this->dbTransaction(function () use ($req) {
+            $validated = $req->validate([
+                'desc'           => 'nullable|string',
+                'header'         => 'nullable|string',
+                'image'          => 'nullable|string',
+                'abouts'         => 'array',
+                'abouts.*.title' => 'nullable|string|max:50',
+                'abouts.*.desc'  => 'nullable|string|max:255',
+            ]);
 
-        $about = $this->about->find($homeId);
+            $imagePath = $this->storeBase64Image($validated['image'] ?? '', 'about_images') ?: null;
 
-        $imagePath = $about->image; 
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('about_images', 'public');
-        }
+            $dto = new AboutDTO(
+                image:  $imagePath,
+                header: $validated['header'] ?? null,
+                desc:   $validated['desc'] ?? null,
+                abouts: $validated['abouts'] ?? []
+            );
 
-        $dto = new AboutDTO(
-            image:  $imagePath,
-            header: $validated['header'] ?? null,
-            desc:   $validated['desc'] ?? null,
-        );
-
-        return response()->json($this->about->update($homeId, $dto));
+            return response()->json($this->about->create($dto));
+        });
     }
 
-    public function destroy($homeId)
+    public function update(Request $req, $aboutId)
     {
-        $this->about->delete($homeId);
-        return response()->json(['message' => 'Deleted successfully']);
+        return $this->dbTransaction(function () use ($req, $aboutId) {
+            $validated = $req->validate([
+                'desc'           => 'nullable|string',
+                'header'         => 'nullable|string',
+                'image'          => 'nullable|string',
+                'abouts'         => 'array',
+                'abouts.*.title' => 'nullable|string|max:50',
+                'abouts.*.desc'  => 'nullable|string|max:255',
+            ]);
+
+            $about = $this->about->find($aboutId);
+
+            $imagePath = $this->storeBase64Image($validated['image'] ?? '', 'about_images') ?: $about->image;
+
+            $dto = new AboutDTO(
+                image:  $imagePath,
+                header: $validated['header'] ?? null,
+                desc:   $validated['desc'] ?? null,
+                abouts: $validated['abouts'] ?? []
+            );
+
+            return response()->json($this->about->update($aboutId, $dto));
+        });
+    }
+
+    public function delete($aboutId)
+    {
+        return $this->dbTransaction(function () use ($aboutId) {
+            $this->about->delete($aboutId);
+            return response()->json(['message' => 'Deleted successfully']);
+        });
     }
 }

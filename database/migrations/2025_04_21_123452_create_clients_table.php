@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('clients', function (Blueprint $table) {
-            $table->string('clientId', 15)->primary();
-            $table->string('image', 200);
-            $table->string('name', 75);
-            $table->timestamps();
-        });
+        if(!Schema::hasTable('clients')) {
+            Schema::create('clients', function (Blueprint $table){
+                $table->engine = "InnoDB";   
+                $table->string('clientId', 15)->primary();
+                $table->string('image', 200);
+                $table->string('name', 75);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

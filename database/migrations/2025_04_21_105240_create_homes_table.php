@@ -11,13 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('homes', function (Blueprint $table) {
-            $table->string('homeId', 15)->primary();
-            $table->string('image', 200);
-            $table->string('header', 75);
-            $table->text('description');
-            $table->timestamps();
-        });
+        if(!Schema::hasTable('homes')) {
+            Schema::create('homes', function (Blueprint $table){
+                $table->engine = "InnoDB";   
+                $table->string('homeId', 15)->primary();
+                $table->string('image', 200);
+                $table->string('header', 75);
+                $table->text('description');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

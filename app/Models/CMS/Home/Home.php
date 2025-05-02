@@ -15,9 +15,6 @@ class Home extends Model
         'image', 'header', 'description'
     ];
 
-    public function buttons()
-    {
-        return $this->hasMany(HomeButtons::class, 'home_id');
-    }
+    public function buttons(){return $this->hasMany(HomeButtons::class, 'home_id');}
 
 }

@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('count_ups', function (Blueprint $table) {
-            $table->string('countUpId', 15)->primary();
-            $table->string('icon', 200);
-            $table->string('title', 75);
-            $table->timestamps();
-        });
+        if(!Schema::hasTable('count_ups')) {
+            Schema::create('count_ups', function (Blueprint $table){
+                $table->engine = "InnoDB";   
+                $table->string('countUpId', 15)->primary();
+                $table->string('icon', 200);
+                $table->string('title', 75);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

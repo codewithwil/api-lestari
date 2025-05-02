@@ -11,23 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('service_contents', function (Blueprint $table) {
-            $table->string('serviceContentId', 15)->primary();
-            $table->string('service_id', 15);
-            $table->string('image', 200);
-            $table->string('title', 75);
-            $table->text('content');
-            $table->string('linkIcon', 200);
-            $table->string('linkTitle', 75);
-            $table->string('link', 75);
-            $table->timestamps();
+        if(!Schema::hasTable('service_contents')) {
+            Schema::create('service_contents', function (Blueprint $table){
+                $table->engine = "InnoDB";   
+                $table->string('serviceContentId', 15)->primary();
+                $table->string('service_id', 15);
+                $table->string('image', 200);
+                $table->string('title', 75);
+                $table->text('content');
+                $table->string('linkIcon', 200);
+                $table->string('linkTitle', 75);
+                $table->string('link', 75);
+                $table->timestamps();
 
-            $table->foreign('service_id')
-            ->references('serviceId')
-            ->on('services')
-            ->onUpdate("cascade")
-            ->onDelete("restrict");
-        });
+                $table->foreign('service_id')
+                ->references('serviceId')
+                ->on('services')
+                ->onUpdate("cascade")
+                ->onDelete("restrict");
+            });
+        }
     }
 
     /**

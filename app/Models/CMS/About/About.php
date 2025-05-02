@@ -15,4 +15,5 @@ class About extends Model
         'image', 'header', 'desc'
     ];
 
+    public function aboutcontent(){return $this->hasMany(AboutContent::class, 'about_id');}
 }

@@ -25,7 +25,7 @@ trait dbTransac
             }
 
             report($e);
-            return response()->json([
+            return response()->json([   
                 'message' => 'Something went wrong',
                 'error' => $e->getMessage(),
             ], 500);

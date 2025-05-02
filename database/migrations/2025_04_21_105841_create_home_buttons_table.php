@@ -11,22 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('home_buttons', function (Blueprint $table) {
-            $table->string('homeButtonId')->primary();
-            $table->string('home_id', 15);
-            $table->string('icon', 200)->nullable(true);
-            $table->string('text', 75);
-            $table->string('link', 75);
-            $table->string('background', 20);
-            $table->string('color', 20);
-            $table->timestamps();
+        if(!Schema::hasTable('home_buttons')) {
+            Schema::create('home_buttons', function (Blueprint $table){
+                $table->engine = "InnoDB";   
+                $table->string('homeButtonId')->primary();
+                $table->string('home_id', 15);
+                $table->string('icon', 200)->nullable(true);
+                $table->string('text', 75);
+                $table->string('link', 100);
+                $table->string('background', 20);
+                $table->string('color', 20);
+                $table->timestamps();
 
-            $table->foreign('home_id')
-            ->references('homeId')
-            ->on('homes')
-            ->onUpdate("cascade")
-            ->onDelete("restrict");
-        });
+                $table->foreign('home_id')
+                ->references('homeId')
+                ->on('homes')
+                ->onUpdate("cascade")
+                ->onDelete("restrict");
+            });
+        }
     }
 
     /**

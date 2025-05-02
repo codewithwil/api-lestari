@@ -11,19 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if(!Schema::hasTable('testimonial_contents')) {
-            Schema::create('testimonial_contents', function (Blueprint $table){
+        if(!Schema::hasTable('about_contents')) {
+            Schema::create('about_contents', function (Blueprint $table){
                 $table->engine = "InnoDB";
-                $table->string('testimonialConId', 15)->primary();
-                $table->string('testimonial_id', 15);
-                $table->string('image', 200);
-                $table->string('name', 75);
+                $table->string('aboutConId', 15)->primary();
+                $table->string('about_id', 15);
+                $table->string('title', 50);
                 $table->text('desc');
                 $table->timestamps();
 
-                $table->foreign('testimonial_id')
-                ->references('testimonialId')
-                ->on('testimonials')
+                $table->foreign('about_id')
+                ->references('aboutId')
+                ->on('abouts')
                 ->onUpdate("cascade")
                 ->onDelete("restrict");
             });
@@ -35,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('testimonial_contents');
+        Schema::dropIfExists('about_contents');
     }
 };
