@@ -21,7 +21,9 @@ return new class extends Migration
                 $table->text('content');
                 $table->string('linkIcon', 200);
                 $table->string('linkTitle', 75);
-                $table->string('link', 75);
+                $table->string('link', 100);
+                $table->string('linkBackground', 20);
+                $table->string('linkColor', 20);
                 $table->timestamps();
 
                 $table->foreign('service_id')

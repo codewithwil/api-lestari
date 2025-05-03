@@ -11,7 +11,9 @@ class ClientRepository implements ClientRepositoryInterface
 {
     public function getAll()
     {
-        return Client::get();
+        return Client::select('clientId', 'image', 'name')
+        ->orderBy('created_at', 'asc') 
+        ->get();
     }
 
     public function find(string $clientId)

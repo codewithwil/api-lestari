@@ -61,7 +61,6 @@ class HomeC extends Controller
             $buttons = $validated['buttons'] ?? [];
             foreach ($buttons as &$button) {
                 $button['icon'] = $this->storeBase64Image($button['icon'] ?? '', 'home_icons') ?: null;
-
             }
 
             $dto = new HomeDTO(

@@ -13,7 +13,7 @@ class ServiceContent extends Model
     protected $primaryKey = 'serviceContentId';
     protected $fillable = [
         'service_id', 'image', 'title', 'content', 'linkIcon', 
-        'linkTitle', 'link'
+        'linkTitle', 'link', 'linkBackground', 'linkColor'
     ];
 
     public function service(){return $this->belongsTo(Service::class, 'service_id', 'serviceId');}

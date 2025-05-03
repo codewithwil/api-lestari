@@ -43,4 +43,16 @@ trait Base64FileHandler
         return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($path));
     }
 
+    protected function handleUpdatedImage(string $newBase64, ?string $oldPath, string $folder): ?string
+    {
+        if (!empty($newBase64) && str_starts_with($newBase64, 'data:image')) {
+            if ($oldPath) {
+                Storage::disk('public')->delete($oldPath);
+            }
+            return $this->storeBase64Image($newBase64, $folder);
+        }
+
+        return $oldPath;
+    }
+
 }

@@ -6,12 +6,16 @@ use App\{
     DTOs\Cms\Client\ClientDto,
     Http\Controllers\Controller,
     Repositories\Cms\Client\ClientRepositoryInterface,
+    Traits\Base64FileHandler,
+    Traits\dbTransac
 };
 
 use Illuminate\Http\Request;
 
 class ClientC extends Controller
 {
+    use dbTransac,Base64FileHandler;
+
     public function __construct(
         protected ClientRepositoryInterface $client
     ) {}
@@ -23,54 +27,58 @@ class ClientC extends Controller
 
     public function show($clientId)
     {
-        return response()->json($this->client->find($clientId));
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name'        => 'nullable|string',
-            'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
-
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('client_images', 'public');
-        }
-
-        $dto = new ClientDto(
-            image:  $imagePath,
-            name: $validated['name'] ?? null,
-        );
-
-        return response()->json($this->client->create($dto));
-    }
-
-    public function update(Request $request, $clientId)
-    {
-        $validated = $request->validate([
-            'name'  => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
-
         $client = $this->client->find($clientId);
 
-        $imagePath = $client->image; 
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('client_images', 'public');
+        if ($client->image) {
+            $client->image = $this->convertToBase64(storage_path("app/public/{$client->image}"));
         }
-
-        $dto = new ClientDto(
-            image:  $imagePath,
-            name: $validated['name'] ?? null,
-        );
-
-        return response()->json($this->client->update($clientId, $dto));
+        return response()->json($client);
     }
 
-    public function destroy($clientId)
+    public function store(Request $req)
     {
-        $this->client->delete($clientId);
-        return response()->json(['message' => 'Deleted successfully']);
+        return $this->dbTransaction(function () use ($req) {
+            $validated = $req->validate([
+                'name'        => 'nullable|string',
+                'image'         => 'nullable|string',
+            ]);
+
+            $imagePath = $this->storeBase64Image($validated['image'] ?? '', 'client_images') ?: null;
+
+            $dto = new ClientDto(
+                image:  $imagePath,
+                name: $validated['name'] ?? null,
+            );
+
+            return response()->json($this->client->create($dto));
+        });
+    }
+
+    public function update(Request $req, $clientId)
+    {
+        return $this->dbTransaction(function () use ($req, $clientId) {
+            $validated = $req->validate([
+                'name'  => 'nullable|string',
+                'image' => 'nullable|string',
+            ]);
+
+            $client = $this->client->find($clientId);
+            $imagePath = $this->storeBase64Image($validated['image'] ?? '', 'client_images') ?: $client->image;
+
+            $dto = new ClientDto(
+                image:  $imagePath,
+                name: $validated['name'] ?? null,
+            );
+
+            return response()->json($this->client->update($clientId, $dto));
+        });
+    }
+
+    public function delete($clientId)
+    {
+        return $this->dbTransaction(function () use ($clientId) {
+            $this->client->delete($clientId);
+            return response()->json(['message' => 'Deleted successfully']);
+        });
     }
 }

@@ -7,7 +7,8 @@ use App\{
     Models\CMS\Service\ServiceContent,
     Repositories\Cms\Service\ServiceRepositoryInterface
 };
-
+use App\Traits\Base64FileHandler;
+use App\Traits\dbTransac;
 use Illuminate\{
     Http\Request,
     Support\Facades\Storage
@@ -15,6 +16,7 @@ use Illuminate\{
 
 class ServiceC extends Controller
 {
+    use dbTransac, Base64FileHandler;
     public function __construct(
         protected ServiceRepositoryInterface $service
     ) {}
@@ -26,134 +28,133 @@ class ServiceC extends Controller
 
     public function show($serviceId)
     {
-        return response()->json($this->service->find($serviceId));
-    }
-
-    public function store(Request $req)
-    {
-        // dd($req->all());    
-        $validated = $req->validate([
-            'description'   => 'nullable|string',
-            'header'        => 'nullable|string',
-            'services'      => 'array',
-            'services.*.title'=> 'required|string|max:75',
-            'services.*.linkTitle'=> 'required|string|max:75', 
-            'services.*.content'=> 'required|string|max:255',
-            'services.*.link'=> 'required|string|url',
-            'services.*.linkIcon' => 'nullable|file|mimes:jpeg,png,jpg,svg|max:2048',
-            'services.*.image' => 'nullable|file|mimes:jpeg,png,jpg,svg|max:2048',
-        ]);
+        $service = $this->service->find($serviceId);
     
-        $services = [];
+        $service->serviceContent->each(function ($item) {
+            $item->image = $item->image 
+                ? $this->convertToBase64(storage_path("app/public/{$item->image}")) 
+                : null;
     
-        foreach ($validated['services'] as $index => $serviceData) {
-            $linkIconPath = null;
-            if (isset($serviceData['linkIcon']) && $req->hasFile("services.{$index}.linkIcon")) {
-                $linkIconPath = $req->file("services.{$index}.linkIcon")->store('button_icons', 'public');
-            }
-    
-            $buttonImagePath = null;
-            if (isset($serviceData['image']) && $req->hasFile("services.{$index}.image")) {
-                $buttonImagePath = $req->file("services.{$index}.image")->store('service_images', 'public');
-            }
-    
-            $services[] = [
-                'title' => $serviceData['title'],
-                'linkTitle' => $serviceData['linkTitle'],  
-                'content' => $serviceData['content'],
-                'link' => $serviceData['link'],
-                'linkIcon' => $linkIconPath,
-                'image' => $buttonImagePath,
-            ];
-        }
-    
-        $serviceDto = new ServiceDto(
-            header: $validated['header'],
-            desc: $validated['description'],
-            services: $services
-        );
-    
-        $service = $this->service->create($serviceDto);
-    
-        foreach ($services as $serviceData) {
-            $service->serviceContent()->create($serviceData);
-        }        
+            $item->linkIcon = $item->linkIcon 
+                ? $this->convertToBase64(storage_path("app/public/{$item->linkIcon}")) 
+                : null;
+        });
     
         return response()->json($service);
+    }    
+
+    public function store(Request $req)
+    {  
+        return $this->dbTransaction(function () use ($req) {
+            $validated = $req->validate([
+                'description'               => 'nullable|string',
+                'header'                    => 'nullable|string',
+                'services'                  => 'array',
+                'services.*.title'          => 'required|string|max:75',
+                'services.*.image'          => 'nullable|string',
+                'services.*.content'        => 'required|string|max:255',
+                'services.*.linkIcon'       => 'nullable|string',
+                'services.*.linkTitle'      => 'required|string|max:75', 
+                'services.*.link'           => 'required|string|url',
+                'services.*.linkBackground' => 'required|string|max:20',
+                'services.*.linkColor'      => 'required|string|max:20',
+            ]);
+        
+            $services = [];
+        
+            foreach ($validated['services'] as $serviceData) {
+                $imagePath   = $this->storeBase64Image($serviceData['image'] ?? '', 'service_images') ?: null;
+                $linkIconPath = $this->storeBase64Image($serviceData['linkIcon'] ?? '', 'service_icons') ?: null;
+        
+                $services[] = [
+                    'title'          => $serviceData['title'],
+                    'image'          => $imagePath,
+                    'content'        => $serviceData['content'],
+                    'linkIcon'       => $linkIconPath,
+                    'linkTitle'      => $serviceData['linkTitle'],  
+                    'link'           => $serviceData['link'],
+                    'linkBackground' => $serviceData['linkBackground'],
+                    'linkColor'      => $serviceData['linkColor'],
+                ];
+            }
+        
+            $serviceDto = new ServiceDto(
+                header: $validated['header'],
+                desc: $validated['description'],
+                services: $services
+            );
+        
+            $service = $this->service->create($serviceDto);
+    
+            return response()->json($service);
+        });
     }
     
     
     public function update(Request $req, $serviceId)
     {
-        $validated = $req->validate([
-            'description'   => 'nullable|string',
-            'header'        => 'nullable|string',
-            'services'      => 'array',
-            'services.*.title' => 'required|string|max:75',
-            'services.*.linkTitle' => 'required|string|max:75', // Ensure linkTitle is validated
-            'services.*.content' => 'required|string|max:255',
-            'services.*.link' => 'required|string|url',
-            'services.*.linkIcon' => 'nullable|file|mimes:jpeg,png,jpg,svg|max:2048',
-            'services.*.image' => 'nullable|file|mimes:jpeg,png,jpg,svg|max:2048',
-        ]);
-    
-        $service = $this->service->find($serviceId);
-    
-        $services = [];
-    
-        foreach ($validated['services'] as $index => $serviceData) {
-            $linkIconPath = $serviceData['linkIcon'] ?? null;
-    
-            if (isset($serviceData['linkIcon']) && $req->hasFile("services.{$index}.linkIcon")) {
-                if ($linkIconPath && Storage::disk('public')->exists($linkIconPath)) {
-                    Storage::disk('public')->delete($linkIconPath);
-                }
-                $linkIconPath = $req->file("services.{$index}.linkIcon")->store('button_icons', 'public');
-            }
-    
-            $buttonImagePath = $serviceData['image'] ?? null;
-    
-            if (isset($serviceData['image']) && $req->hasFile("services.{$index}.image")) {
-                if ($buttonImagePath && Storage::disk('public')->exists($buttonImagePath)) {
-                    Storage::disk('public')->delete($buttonImagePath);
-                }
-                $buttonImagePath = $req->file("services.{$index}.image")->store('service_images', 'public');
-            }
-    
-            $services[] = [
-                'title' => $serviceData['title'],
-                'linkTitle' => $serviceData['linkTitle'],  
-                'content' => $serviceData['content'],
-                'link' => $serviceData['link'],
-                'linkIcon' => $linkIconPath,
-                'image' => $buttonImagePath,
-            ];
-        }
-    
-        $serviceDto = new ServiceDto(
-            header: $validated['header'],
-            desc: $validated['description'],
-            services: $services
-        );
-    
-        $this->service->update($serviceId, $serviceDto);
-
-        $service->serviceContent()->delete();
-    
-        foreach ($services as $serviceData) {
-            $serviceContent = new ServiceContent([
-                'service_id' => $service->serviceId,
-                'image' => $serviceData['image'],
-                'title' => $serviceData['title'],  
-                'linkTitle' => $serviceData['linkTitle'],  
-                'link' => $serviceData['link'],
-                'linkIcon' => $serviceData['linkIcon'],
-                'content' => $serviceData['content'],
+        return $this->dbTransaction(function () use ($req, $serviceId) {
+            $validated = $req->validate([
+                'description'               => 'nullable|string',
+                'header'                    => 'nullable|string',
+                'services'                  => 'array',
+                'services.*.title'          => 'nullable|string|max:75',
+                'services.*.image'          => 'nullable|string',
+                'services.*.content'        => 'nullable|string|max:255',
+                'services.*.linkTitle'      => 'nullable|string|max:75', 
+                'services.*.linkIcon'       => 'nullable|string',
+                'services.*.link'           => 'nullable|string|url',
+                'services.*.linkBackground' => 'nullable|string|max:20',
+                'services.*.linkColor'      => 'nullable|string|max:20',
             ]);
-            $serviceContent->save();
-        }
+        
+            $service = $this->service->find($serviceId);
+        
+            $services = [];
+        
+            foreach ($validated['services'] as $index => $serviceData) {
+                $old = $service->serviceContent[$index] ?? null;
     
-        return response()->json($service);
+                $services[] = [
+                    'title'          => $serviceData['title'],
+                    'image'          => $this->handleUpdatedImage($serviceData['image'] ?? '', $old?->image, 'service_images'),
+                    'content'        => $serviceData['content'],
+                    'linkTitle'      => $serviceData['linkTitle'],  
+                    'linkIcon'       => $this->handleUpdatedImage($serviceData['linkIcon'] ?? '', $old?->linkIcon, 'service_icons'),
+                    'link'           => $serviceData['link'],
+                    'linkBackground' => $serviceData['linkBackground'],
+                    'linkColor'      => $serviceData['linkColor'],
+                ];
+            }
+        
+            $serviceDto = new ServiceDto(
+                header: $validated['header'],
+                desc: $validated['description'],
+                services: $services
+            );
+        
+            $this->service->update($serviceId, $serviceDto);
+
+            $service->serviceContent()->delete();
+        
+            foreach ($services as $serviceData) {
+                $serviceContent = new ServiceContent([
+                    'service_id'     => $service->serviceId,
+                    'image'          => $serviceData['image'],
+                    'title'          => $serviceData['title'],  
+                    'content'        => $serviceData['content'],
+                    'linkTitle'      => $serviceData['linkTitle'],  
+                    'linkIcon'       => $serviceData['linkIcon'],
+                    'link'           => $serviceData['link'],
+                    'linkBackground' => $serviceData['linkBackground'],
+                    'linkColor'      => $serviceData['linkColor'],
+                ]);
+                $serviceContent->save();
+            }
+            
+        
+            return response()->json($service);
+        });
     }
     
         

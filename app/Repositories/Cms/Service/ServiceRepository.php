@@ -11,7 +11,15 @@ class ServiceRepository implements ServiceRepositoryInterface
 {
     public function getAll()
     {
-        return Service::with('serviceContent')->get();
+        return Service::select('serviceId', 'header', 'desc')
+        ->with(['serviceContent' => function ($query) {
+            $query->select(
+                'serviceContentId', 'service_id', 'image', 'title', 'content', 
+                'linkIcon', 'linkTitle', 'link', 'linkBackground', 'linkColor'
+            );
+        }])
+        ->orderBy('created_at', 'asc') 
+        ->get();
     }
 
     public function find(string $serviceId)
