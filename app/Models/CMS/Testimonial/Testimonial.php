@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Testimonial extends Model
 {
     use HasRandomId;
-    protected $table = 'testimonials';
+protected $table = 'testimonials';
     protected $primaryKey = 'testimonialId';
     protected $fillable = [
         'header', 'desc'

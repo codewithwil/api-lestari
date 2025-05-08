@@ -6,12 +6,15 @@ use App\{
     Http\Controllers\Controller,
     DTOs\Cms\CountUp\CountUpDto,
     Repositories\Cms\CountUp\CountUpRepositoryInterface,
+    Traits\Base64FileHandler,
+    Traits\dbTransac
 };
 
 use Illuminate\Http\Request;
 
 class CountUpC extends Controller
 {
+    use dbTransac, Base64FileHandler;
     public function __construct(
         protected CountUpRepositoryInterface $countUp
     ) {}
@@ -23,53 +26,58 @@ class CountUpC extends Controller
 
     public function show($countUpId)
     {
-        return response()->json($this->countUp->find($countUpId));
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title'        => 'nullable|string',
-            'icon' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
-
-        $imagePath = null;
-        if ($request->hasFile('icon')) {
-            $imagePath = $request->file('icon')->store('countUp_images', 'public');
-        }
-
-        $dto = new CountUpDto(
-            icon:  $imagePath,
-            title: $validated['title'] ?? null,
-        );
-
-        return response()->json($this->countUp->create($dto));
-    }
-
-    public function update(Request $request, $countUpId)
-    {
-        $validated = $request->validate([
-            'title'  => 'nullable|string',
-            'icon' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-
-        ]);
-
         $countUp = $this->countUp->find($countUpId);
-
-        $imagePath = $countUp->icon; 
-        if ($request->hasFile('icon')) {
-            $imagePath = $request->file('icon')->store('countUp_images', 'public');
+        if ($countUp->icon) {
+            $countUp->icon = $this->convertToBase64(storage_path("app/public/{$countUp->icon}"));
         }
-
-        $dto = new CountUpDto(
-            icon:  $imagePath,
-            title: $validated['title'] ?? null,
-        );
-
-        return response()->json($this->countUp->update($countUpId, $dto));
+        return response()->json($countUp);
     }
 
-    public function destroy($countUpId)
+    public function store(Request $req)
+    {
+        return $this->dbTransaction(function () use ($req) {
+            $validated = $req->validate([
+                'title'  => 'required|string',
+                'icon'   => 'required|string',
+                'amount' => 'required|integer',
+            ]);
+
+            $imagePath = $this->storeBase64Image($validated['icon'] ?? '', 'countUp_images') ?: null;
+
+            $dto = new CountUpDto(
+                icon:  $imagePath,
+                title: $validated['title'] ?? null,
+                amount: $validated['amount'] ?? null,
+            );
+
+            return response()->json($this->countUp->create($dto));
+        });
+    }
+
+    public function update(Request $req, $countUpId)
+    {
+        return $this->dbTransaction(function () use ($req, $countUpId) {
+            $validated = $req->validate([
+                'title'  => 'nullable|string',
+                'icon'   => 'nullable|string',
+                'amount' => 'nullable|integer',
+            ]);
+
+            $countUp = $this->countUp->find($countUpId);
+
+            $imagePath = $this->handleUpdatedImage($countUp['icon'] ?? '', $countUp?->icon, 'countUp_images');
+
+            $dto = new CountUpDto(
+                icon:  $imagePath,
+                title: $validated['title'] ?? null,
+                amount: $validated['amount'] ?? null,
+            );
+
+            return response()->json($this->countUp->update($countUpId, $dto));
+        });
+    }
+
+    public function delete($countUpId)
     {
         $this->countUp->delete($countUpId);
         return response()->json(['message' => 'Deleted successfully']);

@@ -12,7 +12,7 @@ class CountUp extends Model
     protected $table = 'count_ups';
     protected $primaryKey = 'countUpId';
     protected $fillable = [
-        'icon', 'title',
+        'icon', 'title', 'amount'
     ];
 
 }

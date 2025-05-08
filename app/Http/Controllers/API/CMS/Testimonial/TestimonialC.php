@@ -6,15 +6,15 @@ use App\{
     DTOs\Cms\Testimonial\TestimonialDto,
     Http\Controllers\Controller,
     Repositories\Cms\Testimonial\TestimonialRepositoryInterface,
-    Traits\dbTransac
+    Traits\dbTransac,
+    Traits\Base64FileHandler
 };
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class TestimonialC extends Controller
 {
-    use dbTransac;
+    use dbTransac, Base64FileHandler;
     public function __construct(
         protected TestimonialRepositoryInterface $testimonial
     ) {}
@@ -31,91 +31,62 @@ class TestimonialC extends Controller
 
     public function store(Request $req)
     {
-        $validated = $req->validate([
-            'description'          => 'nullable|string',
-            'header'               => 'nullable|string',
-            'testimonials'         => 'array',
-            'testimonials.*.name'  => 'required|string|max:75',
-            'testimonials.*.desc'  => 'required|string|max:255',
-            'testimonials.*.image' => 'nullable|file|mimes:jpeg,png,jpg,svg|max:2048',
-        ]);
+        return $this->dbTransaction(function () use ($req) {
+            $validated = $req->validate([
+                'desc'                 => 'nullable|string',
+                'header'               => 'nullable|string',
+                'testimonials'         => 'array',
+                'testimonials.*.name'  => 'required|string|max:75',
+                'testimonials.*.desc'  => 'required|string|max:255',
+                'testimonials.*.image' => 'nullable|string', 
+            ]);
     
-        return $this->dbTransaction(function () use ($validated, $req) {
-            $testimonials = [];
+            $testimonialItems = [];
     
-            foreach ($validated['testimonials'] as $index => $testimonialData) {
-                $imagePath = null;
-                if (isset($testimonialData['image']) && $req->hasFile("testimonials.{$index}.image")) {
-                    $imagePath = $req->file("testimonials.{$index}.image")->store('testimonial_images', 'public');
-                }
+            foreach ($validated['testimonials'] ?? [] as $testimonialData) {
+                $imagePath = $this->storeBase64Image($testimonialData['image'] ?? '', 'testimonial_images') ?: null;
     
-                $testimonials[] = [
+                $testimonialItems[] = [
                     'image' => $imagePath,
                     'name'  => $testimonialData['name'],
                     'desc'  => $testimonialData['desc'],
                 ];
             }
     
-            $existing = \App\Models\CMS\Testimonial\Testimonial::where('header', $validated['header'])->first();
-    
-            if ($existing) {
-                foreach ($testimonials as $testimonialData) {
-                    $existing->testimonialContent()->create($testimonialData);
-                }
-    
-                return response()->json($existing->load('testimonialContent'));
-            }
-    
-            $dto = new \App\DTOs\Cms\Testimonial\TestimonialDto(
+            $dto = new TestimonialDto(
                 header: $validated['header'],
-                desc: $validated['description'],
-                testimonials: $testimonials
+                desc: $validated['desc'],
+                testimonials: $testimonialItems
             );
     
-            $created = $this->testimonial->create($dto);
+            $testimonial = $this->testimonial->create($dto);
     
-            return response()->json($created);
+            return response()->json($testimonial);
         });
-    } 
+    }
     
     public function update(Request $req, $testimonialId)
     {
-        $validated = $req->validate([
-            'description'          => 'nullable|string',
-            'header'               => 'nullable|string',
-            'testimonials'         => 'array',
-            'testimonials.*.name'  => 'required|string|max:75',
-            'testimonials.*.desc'  => 'required|string|max:255',
-            'testimonials.*.image' => 'nullable|file|mimes:jpeg,png,jpg,svg|max:2048',
-        ]);
+        return $this->dbTransaction(function () use ($req, $testimonialId) {
+            $validated = $req->validate([
+                'desc'                 => 'nullable|string',
+                'header'               => 'nullable|string',
+                'testimonials'         => 'array',
+                'testimonials.*.name'  => 'required|string|max:75',
+                'testimonials.*.desc'  => 'required|string|max:255',
+                'testimonials.*.image' => 'nullable|file|mimes:jpeg,png,jpg,svg|max:2048',
+            ]);
     
-        return $this->dbTransaction(function () use ($validated, $req, $testimonialId) {
             $testimonial  = $this->testimonial->find($testimonialId);
-            $testimonials = [];
+            $testimonials = $validated['testimonials'] ?? [];
     
-            foreach ($validated['testimonials'] as $index => $testimonialData) {
-                $linkIconPath = $testimonialData['linkIcon'] ?? null;
-    
-                if (isset($testimonialData['linkIcon']) && $req->hasFile("testimonials.{$index}.linkIcon")) {
-                    if ($linkIconPath && Storage::disk('public')->exists($linkIconPath)) {
-                        Storage::disk('public')->delete($linkIconPath);
-                    }
-                    $linkIconPath = $req->file("testimonials.{$index}.linkIcon")->store('button_icons', 'public');
-                }
-    
-                $imagePath = $testimonialData['image'] ?? null;
-    
-                if (isset($testimonialData['image']) && $req->hasFile("testimonials.{$index}.image")) {
-                    if ($imagePath && Storage::disk('public')->exists($imagePath)) {
-                        Storage::disk('public')->delete($imagePath);
-                    }
-                    $imagePath = $req->file("testimonials.{$index}.image")->store('testimonial_images', 'public');
-                }
+            foreach ($testimonials as $index => $testimonialData) {
+                $old          = $testimonials->TestimonialContent[$index] ?? null;
     
                 $testimonials[] = [
                     'name'  => $testimonialData['name'],
                     'desc'  => $testimonialData['desc'],
-                    'image' => $imagePath,
+                    'image' => $this->handleUpdatedImage($testimonialData['image'] ?? '', $old?->image, 'testimonial_images'),
                 ];
             }
     
@@ -124,13 +95,6 @@ class TestimonialC extends Controller
                 desc: $validated['description'],
                 testimonials: $testimonials
             );
-    
-            $this->testimonial->update($testimonialId, $testimonialDto);
-            $testimonial->testimonialContent()->delete();
-    
-            foreach ($testimonials as $testimonialData) {
-                $testimonial->testimonialContent()->create($testimonialData);
-            }
     
             return response()->json($testimonial->load('testimonialContent'));
         });

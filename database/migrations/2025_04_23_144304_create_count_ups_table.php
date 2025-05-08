@@ -17,6 +17,7 @@ return new class extends Migration
                 $table->string('countUpId', 15)->primary();
                 $table->string('icon', 200);
                 $table->string('title', 75);
+                $table->integer('amount');
                 $table->timestamps();
             });
         }

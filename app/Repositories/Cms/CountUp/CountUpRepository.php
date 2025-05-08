@@ -22,8 +22,9 @@ class CountUpRepository implements CountUpRepositoryInterface
     public function create(CountUpDto $data)
     {
         $client = CountUp::create([
-            'icon' => $data->icon,
+            'icon'   => $data->icon,
             'title'  => $data->title,
+            'amount' => $data->amount,
         ]);
         return $client;
     }
@@ -32,8 +33,9 @@ class CountUpRepository implements CountUpRepositoryInterface
     {
         $client = CountUp::findOrFail($countUpId);
         $client->update([
-            'icon' => $data->icon,
+            'icon'   => $data->icon,
             'title'  => $data->title,
+            'amount' => $data->amount,
         ]);
 
         return $client;

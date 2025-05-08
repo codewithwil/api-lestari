@@ -76,35 +76,37 @@ class HomeC extends Controller
 
     public function update(Request $req, $homeId)
     {
-        $validated = $req->validate([
-            'description'          => 'nullable|string',
-            'header'               => 'nullable|string',
-            'image'                => 'nullable|string',
-            'buttons'              => 'array',
-            'buttons.*.text'       => 'required|string',
-            'buttons.*.link'       => 'required|string|url',
-            'buttons.*.icon'       => 'nullable|string',
-            'buttons.*.background' => 'required|string',
-            'buttons.*.color'      => 'required|string',
-        ]);
+        return $this->dbTransaction(function () use ($req, $homeId) {
+            $validated = $req->validate([
+                'description'          => 'nullable|string',
+                'header'               => 'nullable|string',
+                'image'                => 'nullable|string',
+                'buttons'              => 'array',
+                'buttons.*.text'       => 'required|string',
+                'buttons.*.link'       => 'required|string|url',
+                'buttons.*.icon'       => 'nullable|string',
+                'buttons.*.background' => 'required|string',
+                'buttons.*.color'      => 'required|string',
+            ]);
 
-        $home = $this->home->find($homeId);
+            $home = $this->home->find($homeId);
 
-        $imagePath = $this->storeBase64Image($validated['image'] ?? '', 'home_images') ?: $home->image;
+            $imagePath = $this->storeBase64Image($validated['image'] ?? '', 'home_images') ?: $home->image;
 
-        $buttons = $validated['buttons'] ?? [];
-        foreach ($buttons as &$button) {
-            $button['icon'] = $this->storeBase64Image($button['icon'] ?? '', 'home_icons') ?: null;
-        }
+            $buttons = $validated['buttons'] ?? [];
+            foreach ($buttons as &$button) {
+                $button['icon'] = $this->storeBase64Image($button['icon'] ?? '', 'home_icons') ?: null;
+            }
 
-        $dto = new HomeDTO(
-            image: $imagePath,
-            header: $validated['header'] ?? null,
-            description: $validated['description'] ?? null,
-            buttons: $buttons
-        );
+            $dto = new HomeDTO(
+                image: $imagePath,
+                header: $validated['header'] ?? null,
+                description: $validated['description'] ?? null,
+                buttons: $buttons
+            );
 
-        return response()->json($this->home->update($homeId, $dto));
+            return response()->json($this->home->update($homeId, $dto));
+        });
     }
 
     public function delete($homeId)

@@ -19,37 +19,37 @@ class TestimonialRepository implements TestimonialRepositoryInterface
 
     public function create(TestimonialDto $data)
     {
-        $service = Testimonial::create([
+        $testimonial = Testimonial::create([
             'header' => $data->header,
-            'desc'  => $data->desc,
+            'desc'   => $data->desc,
         ]);
 
         foreach ($data->testimonials as $button) {
-            $service->TestimonialContent()->create($button);
+            $testimonial->TestimonialContent()->create($button);
         }
 
-        return $service->load('TestimonialContent');
+        return $testimonial->load('TestimonialContent');
     }
 
     public function update(string $testimonialId, TestimonialDto $data)
     {
-        $service = Testimonial::findOrFail($testimonialId);
-        $service->update([
+        $testimonial = Testimonial::findOrFail($testimonialId);
+        $testimonial->update([
             'header' => $data->header,
             'desc'  => $data->desc,
         ]);
 
-        $service->TestimonialContent()->delete();
+        $testimonial->TestimonialContent()->delete();
         foreach ($data->testimonials as $button) {
-            $service->TestimonialContent()->create($button);
+            $testimonial->TestimonialContent()->create($button);
         }
 
-        return $service->load('TestimonialContent');
+        return $testimonial->load('TestimonialContent');
     }
 
     public function delete(string $testimonialId)
     {
-        $service = Testimonial::findOrFail($testimonialId);
-        $service->delete();
+        $testimonial = Testimonial::findOrFail($testimonialId);
+        $testimonial->delete();
     }
 }
